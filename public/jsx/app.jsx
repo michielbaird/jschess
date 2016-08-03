@@ -128,6 +128,7 @@ var BoardDisplay = React.createClass({
                     {rows}
                 </div>
                 {checkMate ? "Checkmate" : (check? "Check" :"")}
+                <div>{this.props.location}</div>
                 </div>
             );
         } else {

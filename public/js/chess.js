@@ -402,6 +402,21 @@ Board.prototype.move = function(move) {
     }
 };
 
+Board.prototype.serializeBoard = function() {
+    var result = [];
+    for (var y = 0; y < 8; ++y) {
+        for (var x = 0; x < 8; ++x) {
+            if (this.layout[y][x] === Empty) {
+                result.push(".");
+            } else if (layout[y][x].player === "black") {
+                result.push(layout[y][x].type.toLowerCase());
+            } else {
+               result.push(layout[y][x].type);
+            }
+        }
+    }
+    return result.join("");
+};
 
 function Game(board) {
     this.board = board ? board : new Board();
@@ -418,3 +433,14 @@ Game.prototype.move = function(move) {
           }
       }
   };
+
+if( typeof module !== 'undefined' ) {
+    module.exports = {
+        Board: Board,
+        Position: Position,
+        Promotion: Promotion,
+        Move: Move
+    }
+
+}
+
