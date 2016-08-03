@@ -161,7 +161,7 @@ Board.checkPromotion = function(layout, move) {
     return null;
 }
 
-Board.prototype._generatePieceMovesSimple = function(position) {
+Board.prototype._generatePieceMovesSimple = function(position, disable_castling) {
     var piece = this.layout[position.y][position.x];
 
     if (piece == Empty) {
@@ -200,6 +200,10 @@ Board.prototype._generatePieceMovesSimple = function(position) {
                 ]
             );
         case "K":
+	    var castling = [];
+            if (!disable_castling) {
+                castling = this._findCastlingMoves(position, piece.player);
+            }
             return this._step(
                 position,
                 piece.player,
@@ -207,7 +211,7 @@ Board.prototype._generatePieceMovesSimple = function(position) {
                     [1,1],[1,-1],[-1,1],[-1,-1],
                     [0,1],[0,-1],[1,0],[-1,0]
                 ]
-            ).concat(this._findCastlingMoves(position, piece.player)) ;
+            ).concat(castling) ;
         case "P":
             return this._pawnMoves(position, piece.player);
     }
@@ -255,7 +259,7 @@ Board.prototype.isCheck = function(player, king_pos) {
         for (var x = 0; x < 8; x++) {
             if (this.layout[y][x] != Empty &&
                 this.layout[y][x].player != player) {
-                possible = possible.concat(this._generatePieceMovesSimple(new Position(x, y)));
+                possible = possible.concat(this._generatePieceMovesSimple(new Position(x, y), true));
             }
         }
     };
@@ -434,6 +438,7 @@ Game.prototype.move = function(move) {
       }
   };
 
+
 if( typeof module !== 'undefined' ) {
     module.exports = {
         Board: Board,
@@ -443,4 +448,5 @@ if( typeof module !== 'undefined' ) {
     }
 
 }
+
 
