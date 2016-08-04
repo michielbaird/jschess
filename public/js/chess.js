@@ -16,8 +16,29 @@ function Move(from, to, special) {
     this.special = !special ? "normal" : special;
 };
 
+Move.prototype.ser = function() {
+    return {
+        class: "move",
+        from: {
+            x: this.from.x,
+            y: this.from.y
+        },
+        to: {
+            x: this.to.x,
+            y: this.to.y,
+        }
+    }
+}
+
 function Promotion(type) {
     this.type = type;
+}
+
+Promotion.prototype.ser = function() {
+    return {
+        class: "promotion",
+        type: self.type
+    }
 }
 
 function Board(parent_board, move) {
@@ -421,6 +442,34 @@ Board.prototype.serializeBoard = function() {
     }
     return result.join("");
 };
+
+Board.convertMove = function(raw_move) {
+
+    if (raw_move.class == "promotion") {
+        move = new Promotion(raw_move.type);
+    } else {
+        move = new Move(
+            new Position(
+                raw_move.from.x,
+                raw_move.from.y
+            ), new Position(
+                raw_move.to.x,
+                raw_move.to.y
+            )
+        );
+    }
+    return move;
+}
+
+Board.prototype.applyJsonMoves = function(moves) {
+    var cur_board = this;
+    console.log(moves[0]);
+    for (var i = 0; i < moves.length; ++i) {
+        var move = Board.convertMove(moves[i]);
+        cur_board = cur_board.move(move);
+    }
+    return cur_board;
+}
 
 function Game(board) {
     this.board = board ? board : new Board();

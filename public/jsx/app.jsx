@@ -26,18 +26,7 @@ var Square = React.createClass({
 
        var piece_text = this.props.type ? pieceMap[this.props.color][this.props.type] : "";
        return (<div onClick={this.props.onClick} className={classes} >{piece_text}</div>);
-    },
-    shouldComponentUpdate: function(nextProps, nextState) {
-        if (this.props.col !== nextProps.col || this.props.row!== nextProps.row ||
-            this.props.selected !== nextProps.selected ||
-            this.props.highlight !== nextProps.highlight ||
-            this.props.type !== nextProps.type || this.props.color !== nextProps.color){
-            return true;
-        }
-        // You can access `this.props` and `this.state` here
-        // This function should return a boolean, whether the component should re-render.
-        return false;
-    },
+    }
 });
 var BoardDisplay = React.createClass({
     getInitialState: function (){
@@ -45,21 +34,43 @@ var BoardDisplay = React.createClass({
             board: new Board(),
             selected: null,
             to_highlight: {},
-            to_promote: "Q"
-
+            to_promote: "Q",
+            turn: 1,
+            can_play: false
         }
     },
     move: function(move) {
         var board = this.state.board;
         var new_board = board.move(move);
-        console.log(new_board);
         if (new_board) {
             this.setState({
                 selected: null,
                 to_highlight: {},
-                board: new_board
+                board: new_board,
+                can_play: false,
             });
+        } else {
+            return;
         }
+        var turn = this.state.turn;
+        superagent
+            .post("/move")
+            .send({
+                game_id: this.props.game_id,
+                turn: this.state.turn,
+                player: this.props.player,
+                move: move.ser()
+            })
+            .set('Accept', 'application/json')
+            .end(function(err, res) {
+                if (err) {
+                    throw err;
+                }
+                this.setStat({
+                    turn: turn + 1
+                });
+            });
+
     },
     childClick: function (x, y) {
         var player = this.state.board.player;
@@ -80,7 +91,6 @@ var BoardDisplay = React.createClass({
                 var move = possibleMoves[i];
                 to_highlight[move.to.y + ":" + move.to.x] = true
             }
-            console.log(possibleMoves);
 
             this.setState({
                 selected: new Position(x,y),
@@ -100,18 +110,59 @@ var BoardDisplay = React.createClass({
         }
         return false;
     },
+    applyMoves: function(serverMoves) {
+        var board = this.state.board;
+        var turn =  this.state.turn + serverMoves.length;
+        console.log(serverMoves)
+        board = board.applyJsonMoves(serverMoves);
+
+        var can_play = false;
+        if (this.props.player === board.player) {
+            can_play = true;
+        }
+        this.setState({
+            turn: turn,
+            board: board,
+            can_play: can_play
+        });
+    },
+    fetchBoardFromServer: function() {
+        var comp = this;
+        superagent
+            .post("/moves")
+            .send({
+                game_id: this.props.game_id,
+                from_turn: this.state.turn
+            })
+            .set('Accept', 'application/json')
+            .end(function(err, res) {
+                if (err) {
+                    throw err;
+                }
+                comp.applyMoves(res.body);
+            });
+    },
+    componentDidMount: function() {
+        this.fetchBoardFromServer()
+        window.setInterval(this.fetchBoardFromServer, 5000);
+    },
     render: function() {
         if (!this.state.board.promotion) {
             var checkMate = this.state.board.isCheckMate();
             var check = this.state.board.isCheck();
-            var rows = [];
+            var square = [];
             for (var y = 7; y >= 0; y--) {
                 for (var x = 0; x < 8; ++x) {
                     var key = y + ":" + x;
                     var piece = this.state.board.layout[y][x];
                     var highlight = this.state.to_highlight !== null ? this.state.to_highlight[key] : false;
-                    var boundClick = this.childClick.bind(this, x, y);
-                    rows.push(<Square
+                    var boundClick;
+                    if (this.state.can_play) {
+                        boundClick = this.childClick.bind(this, x, y);
+                    } else {
+                        boundClick = function() {};
+                    }
+                    square.push(<Square
                         onClick={boundClick}
                         selected={this.isSelected(x,y)}
                         key={key}
@@ -122,13 +173,26 @@ var BoardDisplay = React.createClass({
                         color={piece.player}/>);
                 }
             }
+            if (this.props.player === "black") {
+                square = square.reverse()
+            }
+            var other_player = this.props.player === "white" ? "black" : "white";
+            var game_code = btoa("game:" + this.props.game_id + ":" + other_player);
+            var game_url = "/game/" + game_code;
             return (
                 <div>
+                <div>Player: {this.props.player}</div>
+                <div>Game: {this.props.game_id}</div>
                 <div className="chessboard">
-                    {rows}
+                    {square}
                 </div>
                 {checkMate ? "Checkmate" : (check? "Check" :"")}
-                <div>{this.props.location}</div>
+                <div>
+                    {other_player}:
+                    <a href={game_url} target="_blank">
+                    Other players link.
+                    </a>
+                </div>
                 </div>
             );
         } else {
@@ -168,9 +232,39 @@ var BoardDisplay = React.createClass({
 
 });
 
+var checkGame = function() {
+    var path = window.location.pathname;
+    if (path.startsWith("/game/")) {
+        var game_path = path.split("/")[2];
+        var raw = atob(game_path).split(":");
+        if (raw[0] !== "game" ||
+                (raw[2] !== "white" && raw[2] !== "black")) {
+            return null;
+        }
+        return {
+            player: raw[2],
+            game_id: raw[1]
+        }
+
+    } else {
+        return null;
+    }
+}
 
 var game = new Game();
- ReactDOM.render(
-     <BoardDisplay />,
-     document.getElementById('app-root')
- )
+var check = checkGame();
+if (check !== null) {
+    ReactDOM.render(
+        <BoardDisplay
+         player={check.player}
+         game_id={check.game_id}
+         path={window.location.pathname} />,
+        document.getElementById('app-root')
+    )
+} else {
+    ReactDOM.render(
+        <div>Invalid Game</div>,
+        document.getElementById('app-root')
+    );
+}
+
