@@ -15,7 +15,6 @@ module.exports = function (app) {
                 turn: {type: 'integer'},
                 board_state: String,
                 last_move: Object,
-                turn: String,
                 wcl: Boolean,
                 wcr: Boolean,
                 bcl: Boolean,
@@ -27,4 +26,4 @@ module.exports = function (app) {
             next();
         }
     }));
-}
+};

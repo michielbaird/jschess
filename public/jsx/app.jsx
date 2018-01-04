@@ -47,12 +47,13 @@ var BoardDisplay = React.createClass({
                 selected: null,
                 to_highlight: {},
                 board: new_board,
-                can_play: false,
+                can_play: false
             });
         } else {
             return;
         }
         var turn = this.state.turn;
+        var self = this;
         superagent
             .post("/move")
             .send({
@@ -66,7 +67,7 @@ var BoardDisplay = React.createClass({
                 if (err) {
                     throw err;
                 }
-                this.setStat({
+                self.setState({
                     turn: turn + 1
                 });
             });
@@ -97,7 +98,6 @@ var BoardDisplay = React.createClass({
                 to_highlight: to_highlight
             });
         } else if (this.state.selected !== null) {
-            var player = this.state.board.player;
 
             // TODO: promotion.
             this.move(new Move(this.state.selected, new Position(x, y)));
@@ -147,7 +147,7 @@ var BoardDisplay = React.createClass({
         window.setInterval(this.fetchBoardFromServer, 5000);
     },
     render: function() {
-        if (!this.state.board.promotion) {
+        if (!this.state.board.promotion || this.state.board.player !== this.props.player) {
             var checkMate = this.state.board.isCheckMate();
             var check = this.state.board.isCheck();
             var square = [];
@@ -201,7 +201,7 @@ var BoardDisplay = React.createClass({
                {this.renderChoices()}
               <input onClick={this.promotePiece} type="button" value="Promote"/>
             </form></div>);
-        };
+        }
     },
     promotePiece() {
         var piece = this.state.to_promote;
@@ -249,7 +249,7 @@ var checkGame = function() {
     } else {
         return null;
     }
-}
+};
 
 var game = new Game();
 var check = checkGame();

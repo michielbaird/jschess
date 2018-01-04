@@ -114,7 +114,7 @@ app.post("/moves", function(req, res, next) {
         res.setHeader('Content-Type', 'application/json');
         res.send(JSON.stringify(moves));
     }, req.body.from_turn);
-})
+});
 
 
 app.post("/move", function(req, res, next) {
@@ -146,7 +146,7 @@ app.post("/move", function(req, res, next) {
             console.log(board);
             function processBoard(board) {
                 var new_board = board.move(move);
-                if (!new_board) {
+                if (!new_board || board.player !== player) {
                     transaction.rollback(function() {});
                     res.sendStatus(400);
                     return;
@@ -163,13 +163,14 @@ app.post("/move", function(req, res, next) {
                     bcr: new_board.castling.black.right,
                     promotion: Boolean(new_board.promotion)
                 }, function(err, db_board) {
-                    db_board.setGame(game, function() {});
                     game.player = new_board.player;
                     game.turn = new_turn;
                     game.save(function (err) {
                         console.log(err);
-                        transaction.commit(function() {
-                            res.sendStatus(200);
+                        db_board.setGame(game, function() {
+                            transaction.commit(function() {
+                                res.sendStatus(200);
+                            });
                         });
                     })
                 });

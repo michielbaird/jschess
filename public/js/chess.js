@@ -1,20 +1,20 @@
 function Piece(type, player) {
     this.type = type;
     this.player = player
-};
+}
 
 function Position(x, y) {
     this.x = x;
     this.y = y;
-};
+}
 
-function Empty() {};
+function Empty() {}
 
 function Move(from, to, special) {
     this.to = to;
     this.from = from;
     this.special = !special ? "normal" : special;
-};
+}
 
 Move.prototype.ser = function() {
     return {
@@ -28,7 +28,7 @@ Move.prototype.ser = function() {
             y: this.to.y,
         }
     }
-}
+};
 
 function Promotion(type) {
     this.type = type;
@@ -37,9 +37,9 @@ function Promotion(type) {
 Promotion.prototype.ser = function() {
     return {
         class: "promotion",
-        type: self.type
+        type: this.type
     }
-}
+};
 
 function Board(parent_board, move) {
     var promotion = null;
@@ -55,7 +55,7 @@ function Board(parent_board, move) {
                 "left": true,
                 "right": true
             }
-        }
+        };
         this.promotion = null;
         this.last_move = null;
         this.parent_board = null;
@@ -108,7 +108,7 @@ function Board(parent_board, move) {
     this.parent_board = parent_board;
     this.last_move = move;
     this.promotion = promotion;
-};
+}
 
 Board.startRow = function(player) {
    return [
@@ -172,7 +172,7 @@ Board.calculateCastling = function(parent_board, layout, move) {
         castling[other][other_dir] = parent_board.castling[other][other_dir];
     }
     return castling;
-}
+};
 
 Board.checkPromotion = function(layout, move) {
     if ((move.to.y === 0 || move.to.y === 7) &&
@@ -180,7 +180,7 @@ Board.checkPromotion = function(layout, move) {
          return move.to;
     }
     return null;
-}
+};
 
 Board.prototype._generatePieceMovesSimple = function(position, disable_castling) {
     var piece = this.layout[position.y][position.x];
@@ -238,18 +238,24 @@ Board.prototype._generatePieceMovesSimple = function(position, disable_castling)
     }
 };
 
-Board.prototype._testCastling = function(player, y, x_coords) {
+Board.prototype._testCastling = function(player, y, x_coords, empty) {
     var b = this;
+    empty = empty ? empty : [];
     return x_coords.every(function (x) {
         return (b.layout[y][x] === Empty &&
             !b.isCheck(player, new Position(x, y)));
+    }) && empty.every(function (x) {
+          return b.layout[y][x] === Empty;
     });
 };
 Board.prototype._findCastlingMoves = function(position, player) {
     var moves = [];
     var y = player == "white" ? 0 : 7;
     console.log(this.castling[player]);
-    if (this.castling[player].left && this._testCastling(player, y, [1, 2, 3])) {
+    if (this.isCheck()) {
+        return [];
+    }
+    if (this.castling[player].left && this._testCastling(player, y, [2, 3], [1])) {
         moves.push(new Move(position, new Position(position.x - 2, y), "castling"));
     }
     if (this.castling[player].right && this._testCastling(player, y, [5, 6])) {
@@ -335,6 +341,8 @@ Board.prototype._slide = function(position, player, deltas) {
     }
     return moves;
 };
+
+
 Board.prototype._step = function(position, player, deltas) {
     var moves = [];
     for (var id in deltas) {
@@ -350,7 +358,7 @@ Board.prototype._step = function(position, player, deltas) {
     }
 
     return moves;
-}
+};
 
 Board.prototype._pawnMoves = function(position, player) {
     moves = [];
@@ -459,7 +467,7 @@ Board.convertMove = function(raw_move) {
         );
     }
     return move;
-}
+};
 
 Board.prototype.applyJsonMoves = function(moves) {
     var cur_board = this;
@@ -469,11 +477,11 @@ Board.prototype.applyJsonMoves = function(moves) {
         cur_board = cur_board.move(move);
     }
     return cur_board;
-}
+};
 
 function Game(board) {
     this.board = board ? board : new Board();
-};
+}
 
 Game.prototype.move = function(move) {
       var board = this.board;
