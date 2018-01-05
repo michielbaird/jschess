@@ -214,5 +214,5 @@ app.use(errorHandler);
 app.use(logErrors);
 
 app.listen(3000, function() {
-  console.log('Server started: http://localhost:' + 3000 + '/');
+  console.log('Server started: http://0.0.0.0:' + 3000 + '/');
 });
