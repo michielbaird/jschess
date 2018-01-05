@@ -251,7 +251,7 @@ Board.prototype._testCastling = function(player, y, x_coords, empty) {
 Board.prototype._findCastlingMoves = function(position, player) {
     var moves = [];
     var y = player == "white" ? 0 : 7;
-    console.log(this.castling[player]);
+    //console.log(this.castling[player]);
     if (this.isCheck()) {
         return [];
     }
@@ -418,7 +418,7 @@ Board.prototype.getPossibleMoves = function(position) {
         return !new_board.isCheck(board.player);
     });
 
-}
+};
 
 Board.prototype.move = function(move) {
     var board = this;
@@ -471,7 +471,7 @@ Board.convertMove = function(raw_move) {
 
 Board.prototype.applyJsonMoves = function(moves) {
     var cur_board = this;
-    console.log(moves[0]);
+    //console.log(moves[0]);
     for (var i = 0; i < moves.length; ++i) {
         var move = Board.convertMove(moves[i]);
         cur_board = cur_board.move(move);

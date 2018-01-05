@@ -55,7 +55,7 @@ var BoardDisplay = React.createClass({
         var turn = this.state.turn;
         var self = this;
         superagent
-            .post("/move")
+            .post("../move")
             .send({
                 game_id: this.props.game_id,
                 turn: this.state.turn,
@@ -113,7 +113,6 @@ var BoardDisplay = React.createClass({
     applyMoves: function(serverMoves) {
         var board = this.state.board;
         var turn =  this.state.turn + serverMoves.length;
-        console.log(serverMoves)
         board = board.applyJsonMoves(serverMoves);
 
         var can_play = false;
@@ -129,7 +128,7 @@ var BoardDisplay = React.createClass({
     fetchBoardFromServer: function() {
         var comp = this;
         superagent
-            .post("/moves")
+            .post("../moves")
             .send({
                 game_id: this.props.game_id,
                 from_turn: this.state.turn
@@ -178,7 +177,7 @@ var BoardDisplay = React.createClass({
             }
             var other_player = this.props.player === "white" ? "black" : "white";
             var game_code = btoa("game:" + this.props.game_id + ":" + other_player);
-            var game_url = "/game/" + game_code;
+            var game_url = game_code;
             return (
                 <div>
                 <div>Player: {this.props.player}</div>
@@ -220,11 +219,14 @@ var BoardDisplay = React.createClass({
             var piece = pieces[i];
             var selected = piece === this.state.to_promote;
             choices.push((
-                <div><input type="radio"
+                <div>
+                    <input type="radio"
                     name="piece"
                     checked={selected}
                     onChange={this.updateChoice}
-                    value={piece}/>{pieceMap[player][piece]}</div>))
+                    value={piece}/>
+                    {pieceMap[player][piece]}
+                </div>))
         }
         return choices;
 
@@ -234,8 +236,10 @@ var BoardDisplay = React.createClass({
 
 var checkGame = function() {
     var path = window.location.pathname;
-    if (path.startsWith("/game/")) {
-        var game_path = path.split("/")[2];
+    var match = /.*\/game\/([^\/]+)\/?$/.exec(path);
+
+    if (match) {
+        var game_path = match[1];
         var raw = atob(game_path).split(":");
         if (raw[0] !== "game" ||
                 (raw[2] !== "white" && raw[2] !== "black")) {
@@ -263,7 +267,7 @@ if (check !== null) {
     )
 } else {
     ReactDOM.render(
-        <div>Invalid Game</div>,
+        <div>Chess?</div>,
         document.getElementById('app-root')
     );
 }

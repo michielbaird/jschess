@@ -87,8 +87,8 @@ function build_moves_db(model, game_id, cb, filter) {
         var moves = [];
         for (var i = 1; i < boards.length; ++i) {
             if (boards[i].turn > filter) {
-                console.log(boards[i].last_move);
-                console.log(boards[i].turn);
+                //console.log(boards[i].last_move);
+                //console.log(boards[i].turn);
                 moves.push(boards[i].last_move);
             }
         }
@@ -126,24 +126,27 @@ app.post("/move", function(req, res, next) {
     var move = chess.Board.convertMove(req.body.move);
     var player = req.body.player;
     var game_id = req.body.game_id;
+
     req.db.transaction(function(err, transaction) {
         req.models.game.one({id: game_id}, function(err, game) {
-            console.log(turn, game.turn);
+            //console.log(turn, game.turn);
             if (err) {
                 console.log(err.stack);
                 next(err);
                 transaction.rollback( function() {});
                 return;
             }
-
+            //console.log(game.turn);
+            //console.log(turn);
             if (game == null || game.turn != turn) {
                 transaction.rollback(function() {});
                 res.sendStatus(400);
                 return;
             }
             var id = game.id + ":" + turn;
+            //console.log(id);
             var board = cache.get(id);
-            console.log(board);
+            //console.log(board);
             function processBoard(board) {
                 var new_board = board.move(move);
                 if (!new_board || board.player !== player) {
@@ -166,7 +169,7 @@ app.post("/move", function(req, res, next) {
                     game.player = new_board.player;
                     game.turn = new_turn;
                     game.save(function (err) {
-                        console.log(err);
+                        //console.log(err);
                         db_board.setGame(game, function() {
                             transaction.commit(function() {
                                 res.sendStatus(200);
